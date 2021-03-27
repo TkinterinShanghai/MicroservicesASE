@@ -1,0 +1,58 @@
+version: "3"
+
+services:
+  api-gateway:
+    build: "./api-gateway"
+    restart: always
+    depends_on:
+      - users-service
+      - items-service
+    environment:
+      - USERS_SERVICE_URI= http://users-service:2100
+      - PRICES_SERVICE_URI= http://prices-service:5000
+    volumes:
+      - ./api-gateway:/opt/app
+    ports:
+      - 2000:2000
+
+  prices-service:
+    build: "./prices-service"
+    restart: always
+    volumes:
+      - ./prices-service:/app/
+    ports:
+      - 5000:5000
+
+  items-service:
+    build: "./items-service"
+    depends_on:
+      - items-service-db
+    volumes:
+      - ./items-service:/opt/app
+
+  items-service-db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: password
+    ports:
+      - 1000:5432
+
+  users-service:
+    build: "./users-service"
+    environment:
+      - DB_URI= postgresql://postgres:password@users-service-db/postgres
+    depends_on:
+      - users-service-db
+    volumes:
+      - ./users-service:/opt/app
+    ports:
+      - 2100:2100
+
+  users-service-db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: users-service-db
+    ports:
+      - 1100:5432
